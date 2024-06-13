@@ -32,6 +32,32 @@ module "eks" {
     coredns = {
       most_recent = true
     }
+    coredns = {
+      enabled     = true
+      most_recent = true
+      configuration_values = jsonencode({
+        computeType = "Fargate"
+        # Ensure that we fully utilize the minimum amount of resources that are supplied by
+        # Fargate https://docs.aws.amazon.com/eks/latest/userguide/fargate-pod-configuration.html
+        # Fargate adds 256 MB to each pod's memory reservation for the required Kubernetes
+        # components (kubelet, kube-proxy, and containerd). Fargate rounds up to the following
+        # compute configuration that most closely matches the sum of vCPU and memory requests in
+        # order to ensure pods always have the resources that they need to run.
+        resources = {
+          limits = {
+            cpu = "0.5"
+            # We are targeting the smallest Task size of 512Mb, so we subtract 256Mb from the
+            # request/limit to ensure we can fit within that task
+            memory = "1Gi"
+          }
+          requests = {
+            cpu = "0.25"
+            # We are targeting the smallest Task size of 512Mb, so we subtract 256Mb from the
+            # request/limit to ensure we can fit within that task
+            memory = "512Mi"
+          }
+        }
+    }) }
     kube-proxy = {
       most_recent = true
     }
@@ -40,8 +66,36 @@ module "eks" {
     }
   }
 
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
+
+  fargate_profiles = {
+    # eks_cluster_name = "shop-for-it-eks"
+    fargate-compute-type = {
+      selectors = [
+        {
+          namespace = "default"
+          labels = {
+            app = "demo-app-shop-for-it-frontend"
+          }
+        },
+        {
+          namespace = "default"
+          labels = {
+            app = "demo-app-shop-for-it-backend"
+          }
+        },
+        { namespace = "*", labels = { compute-type = "fargate" } }
+      ]
+    }
+    fargate-core-dns = {
+      selectors = [
+        { namespace = "kube-system", labels = { "k8s-app" = "kube-dns" } }
+      ]
+    }
+  }
+
+  vpc_id                    = module.vpc.vpc_id
+  subnet_ids                = module.vpc.private_subnets
+  cluster_enabled_log_types = var.kubernetes_cluster_enabled_log_types
 
   eks_managed_node_groups = {
     example = {
@@ -49,7 +103,7 @@ module "eks" {
       max_size     = 10
       desired_size = 4
 
-      instance_types = ["t2.micro"]
+      instance_types = ["t3.micro"]
     }
   }
 
@@ -60,3 +114,20 @@ module "eks" {
 
   tags = local.tags
 }
+
+
+# resource "aws_eks_fargate_profile" "shop-for-it-fg" {
+#   cluster_name           = module.eks.cluster_name
+#   fargate_profile_name   = "shop-for-it-fg"
+#   pod_execution_role_arn = aws_iam_role.eks-fargate-profile.arn
+
+#   # These subnets must have the following resource tag: 
+#   # kubernetes.io/cluster/<CLUSTER_NAME>.
+#   subnet_ids = module.vpc.private_subnets
+
+
+#   selector {
+#     namespace = "default"
+#   }
+# }
+
