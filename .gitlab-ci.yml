@@ -2,12 +2,13 @@ stages:
   - init
   - build
   - deploy
-  - deploy_argocd
+  # - deploy_argocd
   - cleanup
 
 image:
   name: hashicorp/terraform:1.7
   entrypoint: [""]
+
 
 init:
   id_tokens:
@@ -15,10 +16,8 @@ init:
       aud: https://gitlab.com
   stage: init
   before_script:
-    # install aws cli
     - apk --no-cache add curl python3 py3-pip
     - pip3 install --no-cache-dir awscli --break-system-packages
-    # establish connection with AWS to get access credentials
     - >
       export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
       $(aws sts assume-role-with-web-identity
@@ -42,11 +41,8 @@ build:
       aud: https://gitlab.com
   stage: build
   before_script:
-    # install aws cli
     - apk --no-cache add curl python3 py3-pip
     - pip3 install --no-cache-dir awscli --break-system-packages
-
-    # establish connection with AWS to get access credentials
     - >
       export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
       $(aws sts assume-role-with-web-identity
@@ -58,12 +54,7 @@ build:
       --output text))
     - aws sts get-caller-identity
   script:
-    - terraform plan -out "planfile" \
-      -var "user_for_admin_role=${user_for_admin_role}" \
-      -var "user_for_dev_role=${user_for_dev_role}" \
-      -var "gitops_url=${gitops_url}" \
-      -var "gitops_username=${gitops_username}" \
-      -var "gitops_password=${gitops_password}"
+    - terraform plan -out "planfile" -var "user_for_admin_role=${user_for_admin_role}" -var "user_for_dev_role=${user_for_dev_role}" -var "gitops_url=${gitops_url}" -var "gitops_username=${gitops_username}" -var "gitops_password=${gitops_password}"
   artifacts:
     paths:
       - planfile
@@ -74,11 +65,8 @@ deploy:
       aud: https://gitlab.com
   stage: deploy
   before_script:
-    # install aws cli
     - apk --no-cache add curl python3 py3-pip
     - pip3 install --no-cache-dir awscli --break-system-packages
-
-    # establish connection with AWS to get access credentials
     - >
       export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
       $(aws sts assume-role-with-web-identity
@@ -90,13 +78,7 @@ deploy:
       --output text))
     - aws sts get-caller-identity
   script:
-    - terraform apply -input=false "planfile" \
-      -var "user_for_admin_role=${user_for_admin_role}" \
-      -var "user_for_dev_role=${user_for_dev_role}" \
-      -var "gitops_url=${gitops_url}" \
-      -var "gitops_username=${gitops_username}" \
-      -var "gitops_password=${gitops_password}"
-
+    - terraform apply -input=false "planfile" -var "user_for_admin_role=${user_for_admin_role}" -var "user_for_dev_role=${user_for_dev_role}" -var "gitops_url=${gitops_url}" -var "gitops_username=${gitops_username}" -var "gitops_password=${gitops_password}"
   when: manual
 
 cleanup:
@@ -105,11 +87,8 @@ cleanup:
       aud: https://gitlab.com
   stage: cleanup
   before_script:
-    # install aws cli
     - apk --no-cache add curl python3 py3-pip
     - pip3 install --no-cache-dir awscli --break-system-packages
-
-    # establish connection with AWS to get access credentials
     - >
       export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
       $(aws sts assume-role-with-web-identity
