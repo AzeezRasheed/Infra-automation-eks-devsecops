@@ -2,7 +2,7 @@ stages:
   - init
   - build
   - deploy
-  # - deploy_argocd
+  - deploy_argocd
   - cleanup
 
 image:
