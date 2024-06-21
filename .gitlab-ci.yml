@@ -33,6 +33,10 @@ init:
     paths:
       - .terraform/
       - .terraform.lock.hcl
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .terraform/
 
 build:
   id_tokens:
@@ -89,21 +93,21 @@ deploy_argocd:
     name: bearengineer/awscli-kubectl:latest
     entrypoint: [""]
   before_script:
-  # establish connection with AWS to get access credentials
-  - >
-    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
-    $(aws sts assume-role-with-web-identity
-    --role-arn ${ROLE_ARN}
-    --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
-    --web-identity-token ${GITLAB_OIDC_TOKEN}
-    --duration-seconds 3600
-    --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
-    --output text))
-  - aws sts get-caller-identity
-  - aws eks update-kubeconfig --region ${TF_VAR_aws_region} --name ${TF_VAR_name}
-  - export KUBE_CONFIG_PATH=/root/.kube/config
+    # establish connection with AWS to get access credentials
+    - >
+      export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+      $(aws sts assume-role-with-web-identity
+      --role-arn ${ROLE_ARN}
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token ${GITLAB_OIDC_TOKEN}
+      --duration-seconds 3600
+      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+      --output text))
+    - aws sts get-caller-identity
+    - aws eks update-kubeconfig --region ${TF_VAR_aws_region} --name ${TF_VAR_name}
+    - export KUBE_CONFIG_PATH=/root/.kube/config
   script:
-  - kubectl apply -f shop-for-it-argo-app.yaml
+    - kubectl apply -f shop-for-it-argo-app.yaml
 
 cleanup:
   id_tokens:
@@ -126,5 +130,5 @@ cleanup:
     - aws eks update-kubeconfig --region ${TF_VAR_aws_region} --name ${TF_VAR_name}
     - export KUBE_CONFIG_PATH=/root/.kube/config
   script:
-    - terraform destroy -auto-approve
+    - terraform destroy -auto-approve  -var "user_for_admin_role=${user_for_admin_role}" -var "user_for_dev_role=${user_for_dev_role}" -var "gitops_url=${gitops_url}" -var "gitops_username=${gitops_username}" -var "gitops_password=${gitops_password}"
   when: manual
