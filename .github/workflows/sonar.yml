@@ -1,0 +1,44 @@
+# name: Sonar Code Review Workflow
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   # schedule:
+#   #     - cron: '34 0 * * 6'
+
+# jobs:
+#   build:
+#     name: Build
+#     runs-on: self-hosted
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+#       - name: Install Sonar Scanner
+#         run: |
+#           brew update
+#           brew install sonar-scanner
+
+#       - name: Run SonarQube Scan
+#         run: |
+#           sonar-scanner \
+#             -Dsonar.projectKey=your_project_key \
+#             -Dsonar.sources=. \
+#             -Dsonar.host.url=$SONAR_HOST_URL \
+#             -Dsonar.login=$SONAR_TOKEN
+#         env:
+#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+#         # run: |
+#         #   sonar-scanner \
+#         #     -Dsonar.projectKey=your_project_key \
+#         #     -Dsonar.sources=. \
+#         #     -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+#         #     -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+#       # If you wish to fail your job when the Quality Gate is red, uncomment the
+#       # following lines. This would typically be used to fail a deployment.
+#       # - name: Check Quality Gate
+#       #   run: |
+#       #     curl -s -u ${{ secrets.SONAR_TOKEN }}: ${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=your_project_key \
+#       #     | grep '"status":"ERROR"' && exit 1 || exit 0
