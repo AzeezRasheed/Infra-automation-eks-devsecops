@@ -108,7 +108,8 @@ deploy_argocd:
     - export KUBE_CONFIG_PATH=/root/.kube/config
   script:
     - kubectl apply -f shop-for-it-argo-app.yaml
-
+  when: manual
+  
 cleanup:
   id_tokens:
     GITLAB_OIDC_TOKEN:
