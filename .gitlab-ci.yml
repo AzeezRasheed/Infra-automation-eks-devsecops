@@ -58,7 +58,12 @@ build:
       --output text))
     - aws sts get-caller-identity
   script:
-    - terraform plan -out "planfile"
+    - terraform plan -out "planfile" \
+      -var "user_for_admin_role=${user_for_admin_role}" \
+      -var "user_for_dev_role=${user_for_dev_role}" \
+      -var "gitops_url=${gitops_url}" \
+      -var "gitops_username=${gitops_username}" \
+      -var "gitops_password=${gitops_password}"
   artifacts:
     paths:
       - planfile
@@ -85,7 +90,13 @@ deploy:
       --output text))
     - aws sts get-caller-identity
   script:
-    - terraform apply -input=false "planfile"
+    - terraform apply -input=false "planfile" \
+      -var "user_for_admin_role=${user_for_admin_role}" \
+      -var "user_for_dev_role=${user_for_dev_role}" \
+      -var "gitops_url=${gitops_url}" \
+      -var "gitops_username=${gitops_username}" \
+      -var "gitops_password=${gitops_password}"
+
   when: manual
 
 cleanup:
