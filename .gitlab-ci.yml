@@ -9,7 +9,6 @@ image:
   name: hashicorp/terraform:1.7
   entrypoint: [""]
 
-
 init:
   id_tokens:
     GITLAB_OIDC_TOKEN:
